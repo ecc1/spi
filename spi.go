@@ -4,14 +4,11 @@ import (
 	"fmt"
 	s "syscall"
 	"unsafe"
-
-	"github.com/ecc1/gpio"
 )
 
 type Device struct {
 	fd    int
 	speed int
-	cs    gpio.OutputPin
 }
 
 const (
@@ -19,16 +16,12 @@ const (
 	spiDevice = "/dev/spidev5.1"
 )
 
-func Open(speed int, customCSn int) (*Device, error) {
+func Open(speed int) (*Device, error) {
 	fd, err := s.Open(spiDevice, s.O_RDWR, 0)
 	if err != nil {
 		return nil, err
 	}
-	dev := &Device{fd: fd, speed: speed}
-	if customCSn != 0 {
-		dev.cs, err = gpio.Output(customCSn, true)
-	}
-	return dev, err
+	return &Device{fd: fd, speed: speed}, nil
 }
 
 func (dev *Device) Close() error {
@@ -37,10 +30,6 @@ func (dev *Device) Close() error {
 
 // Write writes len(buf) bytes from buf to dev.
 func (dev *Device) Write(buf []byte) error {
-	if dev.cs != nil {
-		dev.cs.Write(true)
-		defer dev.cs.Write(false)
-	}
 	n, err := s.Write(dev.fd, buf)
 	if err != nil {
 		return err
@@ -54,10 +43,6 @@ func (dev *Device) Write(buf []byte) error {
 // Read reads from dev into buf, blocking if necessary
 // until exactly len(buf) bytes have been read.
 func (dev *Device) Read(buf []byte) error {
-	if dev.cs != nil {
-		dev.cs.Write(true)
-		defer dev.cs.Write(false)
-	}
 	for off := 0; off < len(buf); {
 		n, err := s.Read(dev.fd, buf[off:])
 		if err != nil {
@@ -69,10 +54,6 @@ func (dev *Device) Read(buf []byte) error {
 }
 
 func (dev *Device) Transfer(buf []byte) error {
-	if dev.cs != nil {
-		dev.cs.Write(true)
-		defer dev.cs.Write(false)
-	}
 	bufAddr := uint64(uintptr(unsafe.Pointer(&buf[0])))
 	tr := spi_ioc_transfer{
 		tx_buf:        bufAddr,
