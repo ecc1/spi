@@ -19,7 +19,7 @@ const (
 func Open(speed int) (*Device, error) {
 	fd, err := s.Open(spiDevice, s.O_RDWR, 0)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
 	return &Device{fd: fd, speed: speed}, nil
 }
