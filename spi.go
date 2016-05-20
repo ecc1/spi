@@ -21,6 +21,13 @@ func Open(speed int) (*Device, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
+	err = s.Flock(fd, s.LOCK_EX|s.LOCK_NB)
+	if err == s.EWOULDBLOCK {
+		return nil, fmt.Errorf("%s: device is in use", spiDevice)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", spiDevice, err)
+	}
 	return &Device{fd: fd, speed: speed}, nil
 }
 
