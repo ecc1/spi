@@ -22,13 +22,16 @@ func Open(speed int) (*Device, error) {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
 	err = syscall.Flock(fd, syscall.LOCK_EX|syscall.LOCK_NB)
-	if err == syscall.EWOULDBLOCK {
+	switch err {
+	case nil:
+		return &Device{fd: fd, speed: speed}, nil
+	case syscall.EWOULDBLOCK:
+		syscall.Close(fd)
 		return nil, fmt.Errorf("%s: device is in use", spiDevice)
-	}
-	if err != nil {
+	default:
+		syscall.Close(fd)
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
-	return &Device{fd: fd, speed: speed}, nil
 }
 
 func (dev *Device) Close() error {
