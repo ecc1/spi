@@ -2,7 +2,7 @@ package spi
 
 import (
 	"fmt"
-	s "syscall"
+	"syscall"
 	"unsafe"
 )
 
@@ -17,12 +17,12 @@ const (
 )
 
 func Open(speed int) (*Device, error) {
-	fd, err := s.Open(spiDevice, s.O_RDWR, 0)
+	fd, err := syscall.Open(spiDevice, syscall.O_RDWR, 0)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
-	err = s.Flock(fd, s.LOCK_EX|s.LOCK_NB)
-	if err == s.EWOULDBLOCK {
+	err = syscall.Flock(fd, syscall.LOCK_EX|syscall.LOCK_NB)
+	if err == syscall.EWOULDBLOCK {
 		return nil, fmt.Errorf("%s: device is in use", spiDevice)
 	}
 	if err != nil {
@@ -32,12 +32,12 @@ func Open(speed int) (*Device, error) {
 }
 
 func (dev *Device) Close() error {
-	return s.Close(dev.fd)
+	return syscall.Close(dev.fd)
 }
 
 // Write writes len(buf) bytes from buf to dev.
 func (dev *Device) Write(buf []byte) error {
-	n, err := s.Write(dev.fd, buf)
+	n, err := syscall.Write(dev.fd, buf)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (dev *Device) Write(buf []byte) error {
 // until exactly len(buf) bytes have been read.
 func (dev *Device) Read(buf []byte) error {
 	for off := 0; off < len(buf); {
-		n, err := s.Read(dev.fd, buf[off:])
+		n, err := syscall.Read(dev.fd, buf[off:])
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func (dev *Device) Transfer(buf []byte) error {
 		delay_usecs:   1,
 		bits_per_word: 8,
 	}
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_MESSAGE(1)), uintptr(unsafe.Pointer(&tr)))
 	if errno != 0 {
 		return error(errno)
@@ -79,7 +79,7 @@ func (dev *Device) Transfer(buf []byte) error {
 }
 
 func (dev *Device) Mode() (mode int, err error) {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_RD_MODE), uintptr(unsafe.Pointer(&mode)))
 	if errno != 0 {
 		err = error(errno)
@@ -88,7 +88,7 @@ func (dev *Device) Mode() (mode int, err error) {
 }
 
 func (dev *Device) SetMode(mode int) error {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_WR_MODE), uintptr(unsafe.Pointer(&mode)))
 	if errno != 0 {
 		return error(errno)
@@ -97,7 +97,7 @@ func (dev *Device) SetMode(mode int) error {
 }
 
 func (dev *Device) LsbFirst() (lsb bool, err error) {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_RD_LSB_FIRST), uintptr(unsafe.Pointer(&lsb)))
 	if errno != 0 {
 		err = error(errno)
@@ -106,7 +106,7 @@ func (dev *Device) LsbFirst() (lsb bool, err error) {
 }
 
 func (dev *Device) SetLsbFirst(lsb bool) error {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_WR_LSB_FIRST), uintptr(unsafe.Pointer(&lsb)))
 	if errno != 0 {
 		return error(errno)
@@ -115,7 +115,7 @@ func (dev *Device) SetLsbFirst(lsb bool) error {
 }
 
 func (dev *Device) BitsPerWord() (bits int, err error) {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_RD_BITS_PER_WORD), uintptr(unsafe.Pointer(&bits)))
 	if errno != 0 {
 		err = error(errno)
@@ -124,7 +124,7 @@ func (dev *Device) BitsPerWord() (bits int, err error) {
 }
 
 func (dev *Device) SetBitsPerWord(bits int) error {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_WR_BITS_PER_WORD), uintptr(unsafe.Pointer(&bits)))
 	if errno != 0 {
 		return error(errno)
@@ -133,7 +133,7 @@ func (dev *Device) SetBitsPerWord(bits int) error {
 }
 
 func (dev *Device) MaxSpeed() (speed int, err error) {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_RD_MAX_SPEED_HZ), uintptr(unsafe.Pointer(&speed)))
 	if errno != 0 {
 		err = error(errno)
@@ -142,7 +142,7 @@ func (dev *Device) MaxSpeed() (speed int, err error) {
 }
 
 func (dev *Device) SetMaxSpeed(speed int) error {
-	_, _, errno := s.Syscall(s.SYS_IOCTL, uintptr(dev.fd),
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_WR_MAX_SPEED_HZ), uintptr(unsafe.Pointer(&speed)))
 	if errno != 0 {
 		return error(errno)
