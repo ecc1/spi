@@ -12,12 +12,7 @@ type Device struct {
 	speed int
 }
 
-const (
-	// FIX THIS to support platforms other than Intel Edison.
-	spiDevice = "/dev/spidev5.1"
-)
-
-func Open(speed int) (*Device, error) {
+func Open(spiDevice string, speed int) (*Device, error) {
 	fd, err := unix.Open(spiDevice, unix.O_RDWR, 0)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
