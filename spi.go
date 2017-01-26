@@ -95,7 +95,7 @@ func (dev *Device) SetMode(mode int) error {
 	return nil
 }
 
-func (dev *Device) LsbFirst() (lsb bool, err error) {
+func (dev *Device) LSBFirst() (lsb bool, err error) {
 	_, _, errno := unix.Syscall(unix.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_RD_LSB_FIRST), uintptr(unsafe.Pointer(&lsb)))
 	if errno != 0 {
@@ -104,7 +104,7 @@ func (dev *Device) LsbFirst() (lsb bool, err error) {
 	return
 }
 
-func (dev *Device) SetLsbFirst(lsb bool) error {
+func (dev *Device) SetLSBFirst(lsb bool) error {
 	_, _, errno := unix.Syscall(unix.SYS_IOCTL, uintptr(dev.fd),
 		uintptr(spi_IOC_WR_LSB_FIRST), uintptr(unsafe.Pointer(&lsb)))
 	if errno != 0 {
