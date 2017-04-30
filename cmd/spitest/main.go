@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	device = flag.String("d", "/dev/spidev5.1", "SPI `device`")
-	speed  = flag.Int("s", 1000000, "SPI `speed` (Hz)")
+	device   = flag.String("d", "/dev/spidev5.1", "SPI `device`")
+	speed    = flag.Int("s", 1000000, "SPI `speed` (Hz)")
+	customCS = flag.Int("cs", 0, "use `GPIO#` as custom chip select")
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 		}
 		values = append(values, byte(b))
 	}
-	dev, err := spi.Open(*device, *speed)
+	dev, err := spi.Open(*device, *speed, *customCS)
 	if err != nil {
 		log.Fatal(err)
 	}

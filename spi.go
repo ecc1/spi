@@ -4,18 +4,28 @@ import (
 	"fmt"
 	"unsafe"
 
+	"github.com/ecc1/gpio"
 	"golang.org/x/sys/unix"
 )
 
 type Device struct {
 	fd    int
 	speed int
+	cs    gpio.OutputPin
 }
 
-func Open(spiDevice string, speed int) (*Device, error) {
+func Open(spiDevice string, speed int, customCS int) (*Device, error) {
 	fd, err := unix.Open(spiDevice, unix.O_RDWR, 0)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
+	}
+	if customCS != 0 {
+		cs, err := gpio.Output(customCS, true)
+		if err != nil {
+			unix.Close(fd)
+			return nil, fmt.Errorf("GPIO %d for chip select: %v", customCS, err)
+		}
+		return &Device{fd: fd, speed: speed, cs: cs}, nil
 	}
 	err = unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB)
 	switch err {
@@ -36,6 +46,10 @@ func (dev *Device) Close() error {
 
 // Write writes len(buf) bytes from buf to dev.
 func (dev *Device) Write(buf []byte) error {
+	if dev.cs != nil {
+		dev.cs.Write(true)
+		defer dev.cs.Write(false)
+	}
 	n, err := unix.Write(dev.fd, buf)
 	if err != nil {
 		return err
@@ -49,6 +63,10 @@ func (dev *Device) Write(buf []byte) error {
 // Read reads from dev into buf, blocking if necessary
 // until exactly len(buf) bytes have been read.
 func (dev *Device) Read(buf []byte) error {
+	if dev.cs != nil {
+		dev.cs.Write(true)
+		defer dev.cs.Write(false)
+	}
 	for off := 0; off < len(buf); {
 		n, err := unix.Read(dev.fd, buf[off:])
 		if err != nil {
@@ -60,6 +78,10 @@ func (dev *Device) Read(buf []byte) error {
 }
 
 func (dev *Device) Transfer(buf []byte) error {
+	if dev.cs != nil {
+		dev.cs.Write(true)
+		defer dev.cs.Write(false)
+	}
 	bufAddr := uint64(uintptr(unsafe.Pointer(&buf[0])))
 	tr := spi_ioc_transfer{
 		tx_buf:        bufAddr,
