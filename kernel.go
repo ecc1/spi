@@ -1,7 +1,9 @@
 package spi
 
 // Definitions from <linux/spi/spidev.h>
+// C naming is used for ease in keeping this file in sync.
 
+// nolint
 type spi_ioc_transfer struct {
 	tx_buf uint64
 	rx_buf uint64
@@ -17,14 +19,16 @@ type spi_ioc_transfer struct {
 	pad           uint16
 }
 
+// Not all of these are used, but are defined for completeness.
+// nolint
 const (
 	spi_CPHA = 0x01
 	spi_CPOL = 0x02
 
-	spi_MODE_0 = (0 | 0)
-	spi_MODE_1 = (0 | spi_CPHA)
-	spi_MODE_2 = (spi_CPOL | 0)
-	spi_MODE_3 = (spi_CPOL | spi_CPHA)
+	spi_MODE_0 = 0
+	spi_MODE_1 = spi_CPHA
+	spi_MODE_2 = spi_CPOL
+	spi_MODE_3 = spi_CPOL | spi_CPHA
 
 	spi_CS_HIGH   = 0x04
 	spi_LSB_FIRST = 0x08
@@ -61,6 +65,7 @@ const (
 	spi_IOC_WR_MODE32 = 0x40046B05
 )
 
+// nolint
 func spi_IOC_MESSAGE(n uint) uint {
 	return spi_IOC_MESSAGE_base + n*spi_IOC_MESSAGE_incr
 }

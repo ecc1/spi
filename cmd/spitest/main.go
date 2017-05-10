@@ -29,7 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer dev.Close()
+	defer func() { _ = dev.Close() }()
 	if len(values)%2 == 1 {
 		values = append(values, 0)
 	}
