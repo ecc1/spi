@@ -38,7 +38,7 @@ func Open(spiDevice string, speed int, customCS int) (*Device, error) {
 		}
 		return dev, err
 	}
-	cs, err := gpio.Output(customCS, true)
+	cs, err := gpio.Output(customCS, true, false)
 	if err != nil {
 		_ = unix.Close(fd)
 		err = fmt.Errorf("GPIO %d for chip select: %v", customCS, err)
