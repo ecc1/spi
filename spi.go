@@ -99,7 +99,7 @@ func (dev *Device) Transfer(buf []byte) error {
 		rx_buf:        bufAddr,
 		len:           uint32(len(buf)),
 		speed_hz:      uint32(dev.speed),
-		delay_usecs:   1,
+		delay_usecs:   0,
 		bits_per_word: 8,
 	}
 	return dev.syscall(spi_IOC_MESSAGE(1), (*int)(unsafe.Pointer(&tr)))
