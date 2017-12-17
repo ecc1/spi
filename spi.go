@@ -102,25 +102,25 @@ func (dev *Device) Transfer(buf []byte) error {
 		delay_usecs:   0,
 		bits_per_word: 8,
 	}
-	return dev.syscall(spi_IOC_MESSAGE(1), (*int)(unsafe.Pointer(&tr)))
+	return dev.syscall(spi_IOC_MESSAGE(1), unsafe.Pointer(&tr))
 }
 
 // Mode returns the mode of the SPI device.
-func (dev *Device) Mode() (int, error) {
-	var mode int
-	err := dev.syscall(spi_IOC_RD_MODE, &mode)
+func (dev *Device) Mode() (uint8, error) {
+	var mode uint8
+	err := dev.syscallU8(spi_IOC_RD_MODE, &mode)
 	return mode, err
 }
 
 // SetMode sets the mode of the SPI device.
-func (dev *Device) SetMode(mode int) error {
-	return dev.syscall(spi_IOC_WR_MODE, &mode)
+func (dev *Device) SetMode(mode uint8) error {
+	return dev.syscallU8(spi_IOC_WR_MODE, &mode)
 }
 
 // LSBFirst returns bit order of the SPI device.
 func (dev *Device) LSBFirst() (bool, error) {
-	var b int
-	err := dev.syscall(spi_IOC_RD_LSB_FIRST, &b)
+	var b uint8
+	err := dev.syscallU8(spi_IOC_RD_LSB_FIRST, &b)
 	if b != 0 {
 		return true, err
 	}
@@ -129,40 +129,49 @@ func (dev *Device) LSBFirst() (bool, error) {
 
 // SetLSBFirst sets the bit order of the SPI device.
 func (dev *Device) SetLSBFirst(lsb bool) error {
-	var b int
+	var b uint8
 	if lsb {
 		b = 1
 	}
-	return dev.syscall(spi_IOC_WR_LSB_FIRST, &b)
+	return dev.syscallU8(spi_IOC_WR_LSB_FIRST, &b)
 }
 
 // BitsPerWord returns the word size of the SPI device.
 func (dev *Device) BitsPerWord() (int, error) {
-	var bits int
-	err := dev.syscall(spi_IOC_RD_BITS_PER_WORD, &bits)
-	return bits, err
+	var bits uint8
+	err := dev.syscallU8(spi_IOC_RD_BITS_PER_WORD, &bits)
+	return int(bits), err
 }
 
 // SetBitsPerWord sets the word size of the SPI device.
-func (dev *Device) SetBitsPerWord(bits int) error {
-	return dev.syscall(spi_IOC_WR_BITS_PER_WORD, &bits)
+func (dev *Device) SetBitsPerWord(n int) error {
+	bits := uint8(n)
+	return dev.syscallU8(spi_IOC_WR_BITS_PER_WORD, &bits)
 }
 
 // MaxSpeed returns the maximum speed of the SPI device, in Hertz.
 func (dev *Device) MaxSpeed() (int, error) {
-	var speed int
-	err := dev.syscall(spi_IOC_RD_MAX_SPEED_HZ, &speed)
-	return speed, err
+	var speed uint32
+	err := dev.syscallU32(spi_IOC_RD_MAX_SPEED_HZ, &speed)
+	return int(speed), err
 }
 
 // SetMaxSpeed sets the maximum speed of the SPI device, in Hertz.
-func (dev *Device) SetMaxSpeed(speed int) error {
-	return dev.syscall(spi_IOC_WR_MAX_SPEED_HZ, &speed)
+func (dev *Device) SetMaxSpeed(n int) error {
+	speed := uint32(n)
+	return dev.syscallU32(spi_IOC_WR_MAX_SPEED_HZ, &speed)
 }
 
-func (dev *Device) syscall(op uint, arg *int) error {
-	_, _, errno := unix.Syscall(unix.SYS_IOCTL,
-		uintptr(dev.fd), uintptr(op), uintptr(unsafe.Pointer(arg)))
+func (dev *Device) syscallU8(op uint, arg *uint8) error {
+	return dev.syscall(op, unsafe.Pointer(arg))
+}
+
+func (dev *Device) syscallU32(op uint, arg *uint32) error {
+	return dev.syscall(op, unsafe.Pointer(arg))
+}
+
+func (dev *Device) syscall(op uint, arg unsafe.Pointer) error {
+	_, _, errno := unix.Syscall(unix.SYS_IOCTL, uintptr(dev.fd), uintptr(op), uintptr(arg))
 	if errno != 0 {
 		return error(errno)
 	}
