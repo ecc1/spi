@@ -23,19 +23,19 @@ func Open(spiDevice string, speed int, customCS int) (*Device, error) {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
 	var dev *Device
-	if customCS == 0 {
-		// Ensure exclusive access if using default chip-select.
-		err = unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB)
-		switch err {
-		case nil:
-			dev = &Device{fd: fd, speed: speed}
-		case unix.EWOULDBLOCK:
-			_ = unix.Close(fd)
-			err = fmt.Errorf("%s: device is in use", spiDevice)
-		default:
-			_ = unix.Close(fd)
-			err = fmt.Errorf("%s: %v", spiDevice, err)
-		}
+	// Ensure exclusive access if using default chip-select.
+	err = unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB)
+	switch err {
+	case nil:
+		dev = &Device{fd: fd, speed: speed}
+	case unix.EWOULDBLOCK:
+		_ = unix.Close(fd)
+		err = fmt.Errorf("%s: device is in use", spiDevice)
+	default:
+		_ = unix.Close(fd)
+		err = fmt.Errorf("%s: %v", spiDevice, err)
+	}
+	if customCS == 0 || err != nil {
 		return dev, err
 	}
 	cs, err := gpio.Output(customCS, true, false)
