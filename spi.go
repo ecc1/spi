@@ -22,30 +22,27 @@ func Open(spiDevice string, speed int, customCS int) (*Device, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
-	var dev *Device
-	// Ensure exclusive access if using default chip-select.
+	// Ensure exclusive access.
 	err = unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB)
 	switch err {
 	case nil:
-		dev = &Device{fd: fd, speed: speed}
+		if customCS == 0 {
+			return &Device{fd: fd, speed: speed}, nil
+		}
 	case unix.EWOULDBLOCK:
 		_ = unix.Close(fd)
-		err = fmt.Errorf("%s: device is in use", spiDevice)
+		return nil, fmt.Errorf("%s: device is in use", spiDevice)
 	default:
 		_ = unix.Close(fd)
-		err = fmt.Errorf("%s: %v", spiDevice, err)
+		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
-	if customCS == 0 || err != nil {
-		return dev, err
-	}
+	// Use specified GPIO pin as custom chip-select.
 	cs, err := gpio.Output(customCS, true, false)
 	if err != nil {
 		_ = unix.Close(fd)
-		err = fmt.Errorf("GPIO %d for chip select: %v", customCS, err)
-	} else {
-		dev = &Device{fd: fd, speed: speed, cs: cs}
+		return nil, fmt.Errorf("GPIO %d for chip select: %v", customCS, err)
 	}
-	return dev, err
+	return &Device{fd: fd, speed: speed, cs: cs}, nil
 }
 
 // Close closes the SPI device.
