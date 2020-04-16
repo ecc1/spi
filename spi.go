@@ -53,8 +53,8 @@ func (dev *Device) Close() error {
 // Write writes len(buf) bytes from buf to dev.
 func (dev *Device) Write(buf []byte) error {
 	if dev.cs != nil {
-		_ = dev.cs.Write(true)
-		defer func() { _ = dev.cs.Write(false) }()
+		dev.cs.Write(true)
+		defer dev.cs.Write(false)
 	}
 	n, err := unix.Write(dev.fd, buf)
 	if err != nil {
@@ -70,8 +70,8 @@ func (dev *Device) Write(buf []byte) error {
 // until exactly len(buf) bytes have been read.
 func (dev *Device) Read(buf []byte) error {
 	if dev.cs != nil {
-		_ = dev.cs.Write(true)
-		defer func() { _ = dev.cs.Write(false) }()
+		dev.cs.Write(true)
+		defer dev.cs.Write(false)
 	}
 	for off := 0; off < len(buf); {
 		n, err := unix.Read(dev.fd, buf[off:])
@@ -87,8 +87,8 @@ func (dev *Device) Read(buf []byte) error {
 // The received data overwrites buf.
 func (dev *Device) Transfer(buf []byte) error {
 	if dev.cs != nil {
-		_ = dev.cs.Write(true)
-		defer func() { _ = dev.cs.Write(false) }()
+		dev.cs.Write(true)
+		defer dev.cs.Write(false)
 	}
 	bufAddr := uint64(uintptr(unsafe.Pointer(&buf[0])))
 	tr := spi_ioc_transfer{
