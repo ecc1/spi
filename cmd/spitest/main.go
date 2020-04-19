@@ -29,14 +29,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() { _ = dev.Close() }()
+	defer dev.Close()
 	if len(values)%2 == 1 {
 		values = append(values, 0)
 	}
+	response := make([]byte, len(values))
 	fmt.Printf("send: % X\n", values)
-	err = dev.Transfer(values)
+	err = dev.Transfer(values, response)
 	if err != nil {
 		log.Fatalf("%s: %v", *device, err)
 	}
-	fmt.Printf("recv: % X\n", values)
+	fmt.Printf("recv: % X\n", response)
 }

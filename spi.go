@@ -50,18 +50,21 @@ func (dev *Device) Close() error {
 	return unix.Close(dev.fd)
 }
 
-// Transfer uses buf for an SPI transfer operation (send and receive).
-// The received data overwrites buf.
-func (dev *Device) Transfer(buf []byte) error {
+// Transfer performs an SPI transfer operation (send and receive).
+func (dev *Device) Transfer(snd, rcv []byte) error {
+	if len(snd) != len(rcv) {
+		return fmt.Errorf("transfer buffers must be the same length (snd = %d, rcv = %d)", len(snd), len(rcv))
+	}
 	if dev.cs != nil {
 		dev.cs.Write(true)
 		defer dev.cs.Write(false)
 	}
-	bufAddr := uint64(uintptr(unsafe.Pointer(&buf[0])))
+	sndAddr := uint64(uintptr(unsafe.Pointer(&snd[0])))
+	rcvAddr := uint64(uintptr(unsafe.Pointer(&rcv[0])))
 	tr := spi_ioc_transfer{
-		tx_buf:        bufAddr,
-		rx_buf:        bufAddr,
-		len:           uint32(len(buf)),
+		tx_buf:        sndAddr,
+		rx_buf:        rcvAddr,
+		len:           uint32(len(snd)),
 		speed_hz:      uint32(dev.speed),
 		delay_usecs:   0,
 		bits_per_word: 8,
