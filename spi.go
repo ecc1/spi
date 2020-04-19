@@ -50,39 +50,6 @@ func (dev *Device) Close() error {
 	return unix.Close(dev.fd)
 }
 
-// Write writes len(buf) bytes from buf to dev.
-func (dev *Device) Write(buf []byte) error {
-	if dev.cs != nil {
-		dev.cs.Write(true)
-		defer dev.cs.Write(false)
-	}
-	n, err := unix.Write(dev.fd, buf)
-	if err != nil {
-		return err
-	}
-	if n != len(buf) {
-		return fmt.Errorf("wrote %d bytes instead of %d", n, len(buf))
-	}
-	return nil
-}
-
-// Read reads from dev into buf, blocking if necessary
-// until exactly len(buf) bytes have been read.
-func (dev *Device) Read(buf []byte) error {
-	if dev.cs != nil {
-		dev.cs.Write(true)
-		defer dev.cs.Write(false)
-	}
-	for off := 0; off < len(buf); {
-		n, err := unix.Read(dev.fd, buf[off:])
-		if err != nil {
-			return err
-		}
-		off += n
-	}
-	return nil
-}
-
 // Transfer uses buf for an SPI transfer operation (send and receive).
 // The received data overwrites buf.
 func (dev *Device) Transfer(buf []byte) error {
