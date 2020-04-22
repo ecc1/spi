@@ -20,7 +20,7 @@ type Device struct {
 func Open(spiDevice string, speed int, customCS int) (*Device, error) {
 	fd, err := unix.Open(spiDevice, unix.O_RDWR, 0)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %v", spiDevice, err)
+		return nil, fmt.Errorf("%s: %w", spiDevice, err)
 	}
 	// Ensure exclusive access.
 	err = unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB)
@@ -34,13 +34,13 @@ func Open(spiDevice string, speed int, customCS int) (*Device, error) {
 		return nil, fmt.Errorf("%s: device is in use", spiDevice)
 	default:
 		_ = unix.Close(fd)
-		return nil, fmt.Errorf("%s: %v", spiDevice, err)
+		return nil, fmt.Errorf("%s: %w", spiDevice, err)
 	}
 	// Use specified GPIO pin as custom chip-select.
 	cs, err := gpio.Output(customCS, true, false)
 	if err != nil {
 		_ = unix.Close(fd)
-		return nil, fmt.Errorf("GPIO %d for chip select: %v", customCS, err)
+		return nil, fmt.Errorf("GPIO %d for chip select: %w", customCS, err)
 	}
 	return &Device{fd: fd, speed: speed, cs: cs}, nil
 }
